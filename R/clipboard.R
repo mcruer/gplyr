@@ -44,6 +44,34 @@ clipped <- function(header = TRUE) {
   })
 }
 
+#' Read vector from clipboard
+#'
+#' @param header Whether the clipboard data includes a header. Defaults to FALSE.
+#'
+#' @return A vector containing the clipboard data.
+#' @export
+clipped_vec <- function(header = FALSE) {
+  tryCatch({
+    # Read data from clipboard as a tibble
+    df <- clipr::read_clip_tbl(header = header)
+
+    # Convert the tibble to a vector
+    # If there's a header, we take the first column.
+    # If no header, we convert the entire tibble to a vector.
+    if (header) {
+      vec <- df[[1]]
+    } else {
+      vec <- unlist(df) %>% unname()
+    }
+
+    return(vec)
+  }, warning = function(war) {
+    warning("There was a warning: ", conditionMessage(war))
+  }, error = function(err) {
+    stop("An error occurred: ", conditionMessage(err))
+  })
+}
+
 #' Convert Backslashes to Forward Slashes in Clipboard Paths and Quote Them
 #'
 #' This function reads a string from the clipboard, replaces all backslashes (\\)
