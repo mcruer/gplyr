@@ -22,7 +22,7 @@ parse_guess_all <- function (df) {
 #' @param ... use tidyselect to select columns. Defaults to all columns.
 #'
 #' @return A data frame with each input column's class, row count, count of NA values, and
-#' percentage of NA values.
+#' percentage of NA values. If a column has multiple classes, only the first is listed.
 #' @export
 #'
 #' @examples
@@ -33,14 +33,16 @@ parse_guess_all <- function (df) {
 #' }
 na_review <- function (df, ...) {
   col.names <- select_cols_default_all(df, ...)
-  df <- dplyr::select (df, dplyr::all_of(col.names))
-  output <- dplyr::bind_rows(
-    purrr::map_df(df, ~.x %>% class()),
-    purrr::map_df(df, ~.x %>% length() %>% as.character()),
-    purrr::map_df(df, ~.x %>% is.na() %>% sum() %>% as.character()),
-    purrr::map_df(df, ~{scales::percent(mean (is.na(.x)))}),
+  df <- dplyr::select(df, dplyr::all_of(col.names))
+  output <- dplyr::bind_rows(purrr::map_df(df, ~.x %>% class() %>% magrittr::extract(1)),
+                             purrr::map_df(df, ~.x %>% length() %>% as.character()),
+                             purrr::map_df(df, ~.x %>% is.na() %>% sum() %>% as.character()),
+                             purrr::map_df(df, ~{
+                               scales::percent(mean(is.na(.x)))
+                             }),
   )
-  output <- dplyr::bind_cols(`NA Review` = c("Class", "Row Count", "NAs (Count)", "NAs (%)"), output)
+  output <- dplyr::bind_cols(`NA Review` = c("Class", "Row Count",
+                                             "NAs (Count)", "NAs (%)"), output)
   output
 }
 

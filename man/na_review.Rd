@@ -13,7 +13,7 @@ na_review(df, ...)
 }
 \value{
 A data frame with each input column's class, row count, count of NA values, and
-percentage of NA values.
+percentage of NA values. If a column has multiple classes, only the first is listed.
 }
 \description{
 This function provides a summary review of NA values in a data frame. It returns a data frame
