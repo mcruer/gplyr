@@ -42,10 +42,10 @@ content in a target column. It can also drop rows that match specified content.
 }
 \examples{
 \dontrun{
-tibble(a = c("hi", "here", "hi", "bye", "target2", "other")) \%>\%
-  add_category(a, c("here", "target2"),
-               c("One", "Two"),
-               drop_rows = TRUE)
+  tibble(a = c("hi", "here", "hi", "bye", "target2", "other")) \%>\%
+    add_category(a, c("here", "target2"),
+                 c("One", "Two"),
+                 drop_rows = TRUE)
 }
 
 }

@@ -35,10 +35,10 @@ filter_out_target <- function(df, target, column) {
 #'
 #' @examples
 #' \dontrun{
-#' tibble(a = c("hi", "here", "hi", "bye", "target2", "other")) %>%
-#'   add_category(a, c("here", "target2"),
-#'                c("One", "Two"),
-#'                drop_rows = TRUE)
+#'   tibble(a = c("hi", "here", "hi", "bye", "target2", "other")) %>%
+#'     add_category(a, c("here", "target2"),
+#'                  c("One", "Two"),
+#'                  drop_rows = TRUE)
 #' }
 #'
 #' @export
@@ -74,5 +74,49 @@ add_category <- function(df, target_column, target_content, new_column_content =
   }
 
   df
+}
+
+
+#' Split a dataframe into a list of dataframes based on unique values in a specified column.
+#'
+#' @param df A dataframe to split.
+#' @param col Column name based on which to split the dataframe.
+#' @param drop_col Indicates whether to drop the splitting column in the resultant dataframes.
+#' @return A named list of dataframes, each corresponding to a unique value in `col`.
+#' @export
+#' @examples
+#' \dontrun{
+#'   data <- data.frame(group = c("A", "B", "A"), value = 1:3)
+#'   list_of_dfs <- listify_df(data, group)
+#' }
+#'
+listify_df <- function(df, col, drop_col = TRUE) {
+  na_values_count <- df %>%
+    dplyr::ungroup() %>%
+    dplyr::select({{col}}) %>%
+    filter_in_na({{col}}) %>%
+    nrow()
+
+  if(na_values_count > 0) {
+    stop("The target column cannot contain NA values.")
+  }
+
+  keys <- df %>%
+    dplyr::pull({{col}}) %>%
+    unique ()
+
+  list_out <- purrr::map(keys, ~{
+    filtered_df <- df %>%
+      dplyr::filter({{col}} == .x)
+
+    if (drop_col) {
+      filtered_df <- filtered_df %>%
+        dplyr::select(-{{col}})
+    }
+
+    return(filtered_df)
+  })
+  names(list_out) <- keys
+  list_out
 }
 
