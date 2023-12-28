@@ -128,3 +128,39 @@ count_all <- function(df) {
   )
 }
 
+
+#' Rename Columns to x1, x2, x3, etc.
+#'
+#' This function renames all columns of a given dataframe to a sequence starting with "x"
+#' followed by the column index. It uses `stringr::str_c` to create the new column names
+#' and `rlang::set_names` for setting these names.
+#'
+#' @param df A dataframe whose columns need to be renamed.
+#'
+#' @return A dataframe with renamed columns. The names of the columns will be "x1", "x2", "x3",
+#'         etc., corresponding to their original position in the dataframe.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#'
+#' # Example dataframe
+#' df <- data.frame(a = 1:3, b = 4:6, c = 7:9)
+#'
+#' # Rename columns
+#' df_renamed <- rename_x(df)
+#' print(df_renamed)
+#'
+#' # Output:
+#' #   x1 x2 x3
+#' # 1  1  4  7
+#' # 2  2  5  8
+#' # 3  3  6  9
+#' }
+#'
+#' @export
+rename_x <- function (df) {
+  names <- stringr::str_c("x", 1:ncol(df))
+  df %>%
+    rlang::set_names(names)
+}
