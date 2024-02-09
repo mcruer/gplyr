@@ -217,7 +217,7 @@ fix_dates <- function (string) {
         hits = 3 - is.na(p1) - is.na(p2) - is.na(p3),
         out = dplyr::case_when(
           #String is a 5-digit Excel Numeric Date
-          hits == 1 & stringr::str_detect(p1, "^\\d*$") ~
+          hits == 1 & !is.na(as.integer(p1)) ~
             janitor::excel_numeric_to_date(as.numeric(str)) %>%
             as.character(),
           #Month-Year
