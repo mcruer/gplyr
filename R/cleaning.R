@@ -210,7 +210,7 @@ fix_dates <- function (string) {
   }
 
   str <- suppressWarnings(
-    tibble::tibble(str = string) %>%
+    tibble::tibble(str = stringr::str_trim(string)) %>%
       gplyr::quickm(str, stringr::str_replace_all, "/", "-") %>%
       tidyr::separate(str, into = c("p1", "p2", "p3"), sep = "-", remove = FALSE) %>%
       dplyr::mutate (
