@@ -164,3 +164,100 @@ rename_x <- function (df) {
   df %>%
     rlang::set_names(names)
 }
+
+
+
+
+#' Fix Dates
+#'
+#' Standardizes various date formats into 'YYYY-MM-DD' format.
+#'
+#' This function handles multiple date formats including:
+#'   - Excel Numeric Dates (5-digit format)
+#'   - Month-Year (MM-YYYY, assumes day as 01)
+#'   - Year-Month (YYYY-MM, assumes day as 01)
+#'   - Year-Month-Day (YYYY-MM-DD)
+#'   - Year-Day-Month (YYYY-DD-MM)
+#'   - Day-Month-Year (DD-MM-YYYY)
+#'   - Month-Day-Year (MM-DD-YYYY)
+#'
+#' @param string A character vector containing dates in various formats.
+#'
+#' @return A character vector with dates standardized to 'YYYY-MM-DD' format.
+#'
+#' @note For ambiguous formats like 'MM-DD-YYYY' and 'DD-MM-YYYY', the function assumes
+#' the former. For example, '01-02-2023' is interpreted as '2023-02-01' (Feb 1, 2023),
+#' even though it could also be '2023-01-02' (Jan 2, 2023).
+#'
+#' @examples
+#' \dontrun{
+#' fix_dates("01/02/2003")
+#' fix_dates("2003-02-01")
+#' fix_dates("02-2003") # Assumes day as 01
+#' fix_dates("2003-02") # Assumes day as 01
+#' }
+#'
+#' @export
+fix_dates <- function(string) {
+  # function definition here
+}
+
+fix_dates <- function (string) {
+
+  add_leading_zero <- function(str){
+    stringr::str_c ("0", as.numeric(str)) %>%
+      stringr::str_sub(start = -2)
+  }
+
+  str <- suppressWarnings(
+    tibble::tibble(str = string) %>%
+      gplyr::quickm(str, stringr::str_replace_all, "/", "-") %>%
+      tidyr::separate(str, into = c("p1", "p2", "p3"), sep = "-", remove = FALSE) %>%
+      dplyr::mutate (
+        hits = 3 - is.na(p1) - is.na(p2) - is.na(p3),
+        out = dplyr::case_when(
+          #String is a 5-digit Excel Numeric Date
+          hits == 1 & stringr::str_detect(p1, "^\\d{5}$") ~
+            janitor::excel_numeric_to_date(as.numeric(str)) %>%
+            as.character(),
+          #Month-Year
+          hits == 2 & stringr::str_length(p2) == 4 & as.numeric(p1) <= 12 ~
+            stringr::str_c(p2, add_leading_zero(p1), "01", sep = "-"),
+          #Year-Month
+          hits == 2 & stringr::str_length(p1) == 4 & as.numeric(p2) <= 12 ~
+            stringr::str_c(p1, add_leading_zero(p2), "01", sep = "-"),
+          #Year-Month-Day
+          stringr::str_length (p1) == 4 &
+            as.numeric(p2) <=12 & as.numeric(p3) <=31 ~
+            stringr::str_c(p1,
+                           add_leading_zero (p2),
+                           add_leading_zero (p3),
+                           sep = "-"),
+          #Year-Day-Month
+          stringr::str_length (p1) == 4 &
+            as.numeric(p2) <= 31 & as.numeric(p3) <= 12 ~
+            stringr::str_c(p1,
+                           add_leading_zero (p3),
+                           add_leading_zero (p2),
+                           sep = "-"),
+          #Day-Month-Year
+          stringr::str_length (p3) == 4 &
+            as.numeric(p2) <=12 & as.numeric(p1) <=31 ~
+            stringr::str_c(p3,
+                           add_leading_zero (p2),
+                           add_leading_zero (p1),
+                           sep = "-"),
+          #Month-Day-Year
+          stringr::str_length (p3) == 4 &
+            as.numeric(p2) <= 31 & as.numeric(p1) <= 12 ~
+            stringr::str_c(p3,
+                           add_leading_zero (p1),
+                           add_leading_zero (p2),
+                           sep = "-"),
+          TRUE ~ str
+        )
+      ))
+
+  str %>% dplyr::pull(out)
+
+}
