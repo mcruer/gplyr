@@ -120,3 +120,77 @@ listify_df <- function(df, col, drop_col = TRUE) {
   list_out
 }
 
+
+#' Apply a Function Columnwise to Two List-Columns in a Data Frame
+#'
+#' This function takes a data frame and two list-columns containing tibbles
+#' with identical structures. It applies a specified function to corresponding
+#' columns in these tibbles and returns a new list-column containing the results.
+#'
+#' @param df A data frame containing the list-columns to be processed.
+#' @param col1 The name of the first list-column (as a symbol or string).
+#' @param col2 The name of the second list-column (as a symbol or string).
+#' @param .f The function to apply to corresponding columns of the list-columns.
+#'           This function should take at least two arguments.
+#' @param output_col The name of the output list-column (default is "result").
+#' @param ... Additional arguments to pass to the function .f.
+#'
+#' @return A data frame with an additional list-column containing the results
+#'         of applying .f to corresponding columns of col1 and col2.
+#'
+#' @examples
+#' \dontrun{
+#' # Example usage
+#' example_df <- tibble(
+#'   ID = 1:3,
+#'   events = list(tibble(col1 = 1:3, col2 = 4:6)),
+#'   pt = list(tibble(col1 = 2:4, col2 = 5:7))
+#' )
+#' result <- apply_columnwise(example_df, events, pt, function(x, y) x - y)
+#' }
+#' @export
+#'
+#' @importFrom dplyr mutate
+#' @importFrom purrr map2
+#' @importFrom rlang ensym
+#' @importFrom tibble as_tibble
+apply_columnwise <- function(df, col1, col2, .f, output_col = "result", ...) {
+  if (!is.data.frame(df)) {
+    stop("Input 'df' must be a dataframe or tibble.")
+  }
+
+  col1_sym <- rlang::ensym(col1)
+  col2_sym <- rlang::ensym(col2)
+
+  if (!all(c(rlang::as_string(col1_sym), rlang::as_string(col2_sym)) %in% names(df))) {
+    stop("Specified columns are not in the dataframe.")
+  }
+
+  # Check if the two columns contain identical variable names
+  col1_names <- names(dplyr::pull(df, !!col1_sym)[[1]])
+  col2_names <- names(dplyr::pull(df, !!col2_sym)[[1]])
+  if (!identical(col1_names, col2_names)) {
+    stop("The specified columns do not contain identical variable names.")
+  }
+
+  if (!is.function(.f)) {
+    stop("Input '.f' must be a function.")
+  }
+
+  additional_args <- list(...)
+
+  dplyr::mutate(df, {{ output_col }} := purrr::map2(!!col1_sym, !!col2_sym, ~ {
+    cols <- names(.x)
+    results <- vector("list", length(cols))
+
+    for (i in seq_along(cols)) {
+      results[[i]] <- do.call(.f, c(list(.x[[cols[i]]], .y[[cols[i]]]), additional_args))
+    }
+    suppressMessages(
+      tibble::as_tibble(results, .name_repair = "universal") %>%
+        set_names(cols)
+    )
+  }))
+}
+
+
