@@ -121,76 +121,59 @@ listify_df <- function(df, col, drop_col = TRUE) {
 }
 
 
-#' Apply a Function Columnwise to Two List-Columns in a Data Frame
+#' Apply a Function to Corresponding Columns of Two Dataframes
 #'
-#' This function takes a data frame and two list-columns containing tibbles
-#' with identical structures. It applies a specified function to corresponding
-#' columns in these tibbles and returns a new list-column containing the results.
+#' This function applies a user-defined function (.f) to corresponding columns
+#' of two dataframes (df1 and df2) after selecting columns based on dplyr-style
+#' selection arguments (cols).
 #'
-#' @param df A data frame containing the list-columns to be processed.
-#' @param col1 The name of the first list-column (as a symbol or string).
-#' @param col2 The name of the second list-column (as a symbol or string).
-#' @param .f The function to apply to corresponding columns of the list-columns.
-#'           This function should take at least two arguments.
-#' @param output_col The name of the output list-column (default is "result").
-#' @param ... Additional arguments to pass to the function .f.
-#'
-#' @return A data frame with an additional list-column containing the results
-#'         of applying .f to corresponding columns of col1 and col2.
-#'
+#' @param df1 A dataframe to which the function will be applied.
+#' @param df2 Another dataframe to which the function will be applied.
+#' @param .f A function or formula to apply to corresponding columns of df1 and df2.
+#' @param cols A selection specification of columns to which the function will be applied.
+#'             This can be standard column names, helper functions like starts_with(),
+#'             or conditional checks like where(is.numeric). Defaults to everything().
+#' @param ... Additional arguments to pass to .f.
+#' @return A dataframe with the same columns as specified by cols,
+#'         each column being the result of applying .f to the corresponding
+#'         columns of df1 and df2.
 #' @examples
 #' \dontrun{
-#' # Example usage
-#' example_df <- tibble(
-#'   ID = 1:3,
-#'   events = list(tibble(col1 = 1:3, col2 = 4:6)),
-#'   pt = list(tibble(col1 = 2:4, col2 = 5:7))
-#' )
-#' result <- apply_columnwise(example_df, events, pt, function(x, y) x - y)
+#' df1 <- data.frame(a = 1:3, b = 4:6)
+#' df2 <- data.frame(a = 7:9, b = 10:12)
+#' df_map(df1, df2, ~.x + .y)
+#' df_map(df1, df2, ~.x * .y, cols = starts_with("b"))
 #' }
 #' @export
 #'
-#' @importFrom dplyr mutate
-#' @importFrom purrr map2
-#' @importFrom rlang ensym
-#' @importFrom tibble as_tibble
-apply_columnwise <- function(df, col1, col2, .f, output_col = "result", ...) {
-  if (!is.data.frame(df)) {
+#' @importFrom dplyr select
+#' @importFrom dplyr relocate
+#' @importFrom purrr map2_dfc
+df_map <- function(df1, df2, .f, cols = dplyr::everything(), ...) {
+  if (!is.data.frame(df1) | !is.data.frame(df2)) {
     stop("Input 'df' must be a dataframe or tibble.")
   }
 
-  col1_sym <- rlang::ensym(col1)
-  col2_sym <- rlang::ensym(col2)
+  # Applying dplyr-style selection to both dataframes
+  df1_selected <- df1 %>% dplyr::select({{ cols }})
+  df2_selected <- df2 %>% dplyr::select({{ cols }})
 
-  if (!all(c(rlang::as_string(col1_sym), rlang::as_string(col2_sym)) %in% names(df))) {
-    stop("Specified columns are not in the dataframe.")
+  # Aligning columns of df2_selected to those of df1_selected
+  df2_selected <- df2_selected %>% dplyr::relocate(dplyr::any_of(names(df1_selected)))
+
+  if (!identical(names(df1_selected), names(df2_selected))) {
+    stop("The selected columns in the dataframes do not match.")
   }
 
-  # Check if the two columns contain identical variable names
-  col1_names <- names(dplyr::pull(df, !!col1_sym)[[1]])
-  col2_names <- names(dplyr::pull(df, !!col2_sym)[[1]])
-  if (!identical(col1_names, col2_names)) {
-    stop("The specified columns do not contain identical variable names.")
-  }
-
-  if (!is.function(.f)) {
-    stop("Input '.f' must be a function.")
+  if (!inherits(.f, "function") && !inherits(.f, "formula")) {
+    stop("Input '.f' must be a function or a formula.")
   }
 
   additional_args <- list(...)
 
-  dplyr::mutate(df, {{ output_col }} := purrr::map2(!!col1_sym, !!col2_sym, ~ {
-    cols <- names(.x)
-    results <- vector("list", length(cols))
+  # Applying the function column-wise
+  results <- purrr::map2_dfc(df1_selected, df2_selected, .f, ...)
 
-    for (i in seq_along(cols)) {
-      results[[i]] <- do.call(.f, c(list(.x[[cols[i]]], .y[[cols[i]]]), additional_args))
-    }
-    suppressMessages(
-      tibble::as_tibble(results, .name_repair = "universal") %>%
-        set_names(cols)
-    )
-  }))
+  results
 }
-
 
