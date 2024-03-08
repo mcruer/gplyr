@@ -177,3 +177,63 @@ df_map <- function(df1, df2, .f, cols = dplyr::everything(), ...) {
   results
 }
 
+#' Row-wise Mutation of Data Frame
+#'
+#' This function performs a row-wise operation on selected columns of a data
+#' frame and creates a new column with the results.
+#'
+#' @param df A data frame or tibble to be manipulated.
+#' @param new_col_name A symbol indicating the name of the new column to be created.
+#' @param cols A tidy-select expression to select columns for row-wise operation.
+#' @param fun A function or formula to apply to each row on selected columns.
+#' @param ... Additional arguments to be passed to the function `fun`.
+#'
+#' @return A data frame with the new column added.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   tibble(a1 = 1:5, a2 = 6:10) %>%
+#'     mutate_rowwise(new_column, starts_with("a"), sum)
+#' }
+mutate_rowwise <- function(df, new_col_name, cols, fun, ...) {
+
+  # Ensure df is a data frame
+  if (!is.data.frame(df)) {
+    stop("The first argument must be a data frame.")
+  }
+
+  # Convert new_col_name to a symbol (ensures it works with both strings and symbols)
+  new_col_name_sym <- rlang::ensym(new_col_name)
+
+  # Check if the new column name already exists in the dataframe
+  if (as.character(new_col_name_sym) %in% names(df)) {
+    stop("new_col_name already exists in the data frame.")
+  }
+
+  # Capture existing groups
+  group_vars <- dplyr::group_vars(df)
+
+  # Convert function if it's a formula
+  if (inherits(fun, "formula")) {
+    fun <- rlang::as_function(fun)
+  } else if (!is.function(fun)) {
+    stop("fun must be a function or a formula.")
+  }
+
+  # Select columns based on tidy_select
+  cols_selected <- rlang::enquos(cols)
+
+  # Check if cols results in a non-empty selection
+  if (length(cols_selected) == 0) {
+    stop("No columns selected. Please select at least one column.")
+  }
+
+  # Perform row-wise mutation and then restore original grouping
+  df %>%
+    dplyr::ungroup() %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(!!new_col_name_sym := fun(dplyr::c_across(!!!cols_selected), ...)) %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(!!!rlang::syms(group_vars), .add = TRUE)
+}
