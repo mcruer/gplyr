@@ -154,6 +154,10 @@ df_map <- function(df1, df2, .f, cols = dplyr::everything(), ...) {
     stop("Input 'df' must be a dataframe or tibble.")
   }
 
+  if (nrow(df1) != nrow(df2)) {
+    stop("df1 and df2 must have the same number of rows.")
+  }
+
   # Applying dplyr-style selection to both dataframes
   df1_selected <- df1 %>% dplyr::select({{ cols }})
   df2_selected <- df2 %>% dplyr::select({{ cols }})
