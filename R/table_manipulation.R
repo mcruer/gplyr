@@ -241,3 +241,70 @@ mutate_rowwise <- function(df, new_col_name, cols, fun, ...) {
     dplyr::ungroup() %>%
     dplyr::group_by(!!!rlang::syms(group_vars), .add = TRUE)
 }
+
+
+#' Merge and Supersede Column Values Between Two Data Frames
+#'
+#' `merge_supersede` merges a specified column from a second data frame (`df2`)
+#' into a first data frame (`df1`) based on a unique identifier shared by both
+#' data frames. For each record, if the second data frame (`df2`) contains non-NA
+#' values in the specified column, these values supersede those in the first data
+#' frame (`df1`). The values from `df1` are preserved only when the corresponding
+#' record in `df2` contains NA values in that column.
+#'
+#' @param df1 The primary data frame.
+#' @param df2 The secondary data frame whose non-NA values will supersede those in `df1`.
+#' @param unique_identifier Unquoted name of the column that uniquely identifies each row.
+#'                          This column must exist in both `df1` and `df2`.
+#' @param column Unquoted name of the column whose values are to be superseded.
+#'               This column must exist in both `df1` and `df2`.
+#'
+#' @return A data frame resulting from merging the specified column of `df2` into `df1`.
+#'         This merge is based on the unique identifier, with `df2` values taking precedence
+#'         over `df1` values, except when `df2` has NA values.
+#'
+#' @importFrom gplyr merge_if_na
+#' @importFrom dplyr select
+#' @importFrom dplyr left_join
+#'
+#' @examples
+#' dontrun{
+#'   # Assuming df1 and df2 are existing data frames with a common unique identifier
+#'   # column 'id' and a common column 'value'.
+#'   # The value from df2 supersedes that of df1 except where df2's value is NA.
+#'   result <- merge_supersede(df1, df2, id, value)
+#' }
+#'
+#' @export
+merge_supersede <- function (df1, df2, unique_identifier, column){
+
+  unique_identifier_name <- rlang::as_string(rlang::enexpr(unique_identifier))
+  column_name <- rlang::as_string (rlang::enexpr(column))
+  column_name_2 <- stringr::str_c(column_name, "2")
+
+  if (!column_name %in% intersect (names(df1), names(df2))) {
+    stop(stringr::str_c("The column, ", column_name, ", is not present in both df1 ",
+                        "and df2."))
+  }
+
+  if(nrow(dplyr::distinct(df1, {{unique_identifier}})) != nrow(df1)){
+    stop("df1 does not provide unique identifiers")
+  }
+
+  if(nrow(dplyr::distinct(df2, {{unique_identifier}})) != nrow(df2)){
+    stop("df2 does not provide unique identifiers")
+  }
+
+
+  df_remaining <- df1 %>% dplyr::select(-{{column}})
+
+  df_out <- df1 %>%
+    dplyr::select({{unique_identifier}}, {{column}}) %>%
+    purrr::set_names(c(unique_identifier_name, column_name_2)) %>%
+    dplyr::left_join(df2 %>% dplyr::select({{unique_identifier}}, {{column}})) %>%
+    gplyr::merge_if_na({{column}}, !!rlang::sym (column_name_2))
+
+  df_out %>%
+    dplyr::left_join(df_remaining)
+}
+
