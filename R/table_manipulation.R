@@ -263,12 +263,11 @@ mutate_rowwise <- function(df, new_col_name, cols, fun, ...) {
 #'         This merge is based on the unique identifier, with `df2` values taking precedence
 #'         over `df1` values, except when `df2` has NA values.
 #'
-#' @importFrom gplyr merge_if_na
 #' @importFrom dplyr select
 #' @importFrom dplyr left_join
 #'
 #' @examples
-#' dontrun{
+#' \dontrun{
 #'   # Assuming df1 and df2 are existing data frames with a common unique identifier
 #'   # column 'id' and a common column 'value'.
 #'   # The value from df2 supersedes that of df1 except where df2's value is NA.
@@ -302,7 +301,7 @@ merge_supersede <- function (df1, df2, unique_identifier, column){
     dplyr::select({{unique_identifier}}, {{column}}) %>%
     purrr::set_names(c(unique_identifier_name, column_name_2)) %>%
     dplyr::left_join(df2 %>% dplyr::select({{unique_identifier}}, {{column}})) %>%
-    gplyr::merge_if_na({{column}}, !!rlang::sym (column_name_2))
+    merge_if_na({{column}}, !!rlang::sym (column_name_2))
 
   df_out %>%
     dplyr::left_join(df_remaining)
