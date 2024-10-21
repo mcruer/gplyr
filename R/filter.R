@@ -27,7 +27,6 @@ select_cols_default_all <- function(.df, ..., include_grouped = FALSE) {
 }
 
 
-
 #' Filter Out Rows Containing NA in Specified Columns
 #'
 #' This function removes rows from the data where specified columns contain NA values.
@@ -39,7 +38,7 @@ select_cols_default_all <- function(.df, ..., include_grouped = FALSE) {
 #' @return A tibble with rows containing NA in specified columns removed
 #' @export
 filter_out_na <- function (.df, ..., if_any_or_all = "if_all") {
-  col.names <- select_cols_default_all(.df, ..., include_grouped = FALSE)
+  col.names <- .df %>% dplyr::ungroup() %>% dplyr::select(...) %>% names()
   groups <- dplyr::group_vars(.df)
   if (if_any_or_all == "if_any") {
     .df %>%
@@ -65,7 +64,8 @@ filter_out_na <- function (.df, ..., if_any_or_all = "if_all") {
 #' @return A tibble with only rows containing NA in specified columns
 #' @export
 filter_in_na <- function (.df, ..., if_any_or_all = "if_all") {
-  col.names <- select_cols_default_all(.df, ..., include_grouped = FALSE)
+  col.names <- .df %>% dplyr::ungroup() %>% dplyr::select(...) %>% names()
+  #col.names <- select_cols_default_all(.df, ..., include_grouped = FALSE)
   groups <- dplyr::group_vars(.df)
   if (if_any_or_all == "if_any") {
     .df %>%
