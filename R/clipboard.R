@@ -25,24 +25,94 @@ clip_it <- function(df, col_names = TRUE, sep = "\t", na = "", clipboard.size = 
   })
 }
 
-#' Read data frame from clipboard
+#' Read Data Frame from Clipboard
 #'
-#' @param header Whether the clipboard data includes a header. Defaults to TRUE.
+#' This function reads data from the clipboard and returns a tibble. It can handle data with or without a header row and allows you to specify custom column names.
+#'
+#' @param header Logical value indicating whether the clipboard data includes a header row. Defaults to \code{TRUE}.
+#' @param header_names Optional character vector specifying custom column names. If provided, the length must match the number of columns in the data.
 #'
 #' @return A tibble containing the clipboard data.
+#'
+#' @details
+#' The \code{paste_it} function reads tab-separated values from the clipboard using \code{readr::read_tsv()} and returns a tibble. The function ensures that:
+#' \itemize{
+#'   \item Leading and trailing whitespace in data fields is preserved (\code{trim_ws = FALSE}).
+#'   \item No characters are treated as quoting characters (\code{quote = ""}), which prevents issues with quotes and apostrophes in the data.
+#'   \item Column names are not altered (\code{name_repair = "minimal"}), preserving spaces and special characters.
+#' }
+#' If \code{header} is \code{TRUE}, the first row of the clipboard data is used as column names. If \code{header_names} is provided, these names replace the existing column names.
+#'
+#' @examples
+#' \dontrun{
+#' # Example 1: Reading data with a header row
+#' # Copy data from Excel with a header row to the clipboard, then run:
+#' df <- paste_it()
+#'
+#' # Example 2: Reading data without a header row and specifying custom column names
+#' df <- paste_it(header = FALSE, header_names = c("Column1", "Column2", "Column3"))
+#'
+#' # Example 3: Reading data with a header row and replacing column names
+#' df <- paste_it(header = TRUE, header_names = c("NewName1", "NewName2", "NewName3"))
+#' }
+#'
+#' @importFrom readr read_tsv
+#' @importFrom clipr read_clip
+#' @importFrom tibble as_tibble
+#' @importFrom purrr set_names
 #' @export
-clipped <- function(header = TRUE) {
-
+paste_it <- function(header = TRUE, header_names = NULL) {
   tryCatch({
-    df <- clipr::read_clip_tbl(header = header) %>%
-      tibble::tibble()
+    # Ensure required packages are available
+    if (!requireNamespace("readr", quietly = TRUE)) {
+      stop("The 'readr' package is required but not installed. Please install it using install.packages('readr').")
+    }
+    if (!requireNamespace("clipr", quietly = TRUE)) {
+      stop("The 'clipr' package is required but not installed. Please install it using install.packages('clipr').")
+    }
+    if (!requireNamespace("tibble", quietly = TRUE)) {
+      stop("The 'tibble' package is required but not installed. Please install it using install.packages('tibble').")
+    }
+    if (!requireNamespace("purrr", quietly = TRUE)) {
+      stop("The 'purrr' package is required but not installed. Please install it using install.packages('purrr').")
+    }
+
+    # Read clipboard content
+    clipboard_content <- clipr::read_clip()
+    # Combine into a single string
+    clipboard_text <- paste(clipboard_content, collapse = "\n")
+
+    # Read data with 'col_names' set according to 'header' argument
+    df <- readr::read_tsv(
+      I(clipboard_text),
+      col_names = header,
+      quote = "",
+      name_repair = "minimal",
+      trim_ws = FALSE,
+      skip_empty_rows = TRUE,
+      show_col_types = FALSE
+    )
+
+    # Convert to tibble
+    df <- tibble::as_tibble(df)
+
+    # If 'header_names' is provided, assign names to columns
+    if (!is.null(header_names)) {
+      if (length(header_names) != ncol(df)) {
+        stop("Length of 'header_names' does not match the number of columns in the data.")
+      }
+      df <- purrr::set_names(df, header_names)
+    }
+
     return(df)
   }, warning = function(war) {
     warning("There was a warning: ", conditionMessage(war))
+    return(NULL)
   }, error = function(err) {
     stop("An error occurred: ", conditionMessage(err))
   })
 }
+
 
 #' Read vector from clipboard
 #'
