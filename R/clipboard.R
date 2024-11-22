@@ -178,3 +178,84 @@ fix_path <- function() {
   clipr::write_clip(quoted_content)
 }
 
+
+#' Process Clipboard Content into a List for R Code
+#'
+#' Converts data copied to the clipboard (from Excel or similar sources) into a formatted list suitable for use in R code.
+#' The output is a comma-separated list, optionally quoted, with each element placed on a new line.
+#' The processed list is written back to the clipboard for easy pasting.
+#'
+#' @param quote Logical. Whether to wrap each cell in double quotes. Defaults to \code{FALSE}.
+#' @param trailing_comma Logical. Whether to add a trailing comma after the last element. Defaults to \code{TRUE}.
+#'
+#' @return Invisibly returns the formatted text as a character string. The text is also written to the clipboard for easy pasting.
+#'
+#' @details
+#' The function reads data from the clipboard, splits it into individual elements based on tabs or newlines,
+#' trims whitespace, optionally wraps elements in quotes, and appends commas to each element.
+#' The resulting text is formatted for use in R code and written back to the clipboard for convenience.
+#'
+#' This function is particularly useful for preparing column names or values for use in functions like \code{dplyr::select()}.
+#'
+#' @examples
+#' \dontrun{
+#' # Copy a row or column of data from Excel, then run:
+#' clipboard_to_list()
+#'
+#' # Wrap each cell in quotes:
+#' clipboard_to_list(quote = TRUE)
+#'
+#' # Skip the trailing comma after the last element:
+#' clipboard_to_list(trailing_comma = FALSE)
+#' }
+#'
+#' @importFrom clipr read_clip write_clip
+#' @importFrom stringr str_split str_trim str_c
+#' @export
+clipboard_to_list <- function(quote = FALSE, trailing_comma = TRUE) {
+  # Ensure required packages are available
+  if (!requireNamespace("clipr", quietly = TRUE)) {
+    stop("The 'clipr' package is required but not installed. Please install it using install.packages('clipr').")
+  }
+  if (!requireNamespace("stringr", quietly = TRUE)) {
+    stop("The 'stringr' package is required but not installed. Please install it using install.packages('stringr').")
+  }
+
+  # Read from the clipboard using clipr
+  clipboard_content <- clipr::read_clip()
+
+  # Combine the clipboard content into a single string
+  clipboard_text <- paste(clipboard_content, collapse = "\n")
+
+  # Split the clipboard contents into individual cells using stringr
+  # Use both tab and newline as delimiters to handle rows and columns
+  cells <- stringr::str_split(clipboard_text, "\\t|\\n")[[1]]
+
+  # Remove empty strings (in case of extra newlines)
+  cells <- cells[cells != ""]
+
+  # Trim whitespace from each cell
+  cells <- stringr::str_trim(cells)
+
+  # Optionally add quotes around each cell
+  if (quote) {
+    cells <- stringr::str_c("\"", cells, "\"")
+  }
+
+  # Add a comma to all cells (if trailing_comma is TRUE)
+  if (trailing_comma) {
+    cells <- paste0(cells, ",")
+  } else {
+    # Add a comma to all but the last cell
+    cells <- ifelse(seq_along(cells) < length(cells), paste0(cells, ","), cells)
+  }
+
+  # Place each cell on a new line
+  output <- paste(cells, collapse = "\n")
+
+  # Print the output to show what's happening
+  cat(output, sep = "\n")
+
+  # Write the modified text back to the clipboard
+  clipr::write_clip(output)
+}
