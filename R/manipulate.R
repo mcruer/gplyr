@@ -164,3 +164,41 @@ add_index <- function (df, col_name = index) {
   df
 }
 
+#' Left Join Without Column Name Collisions
+#'
+#' Performs a left join between two data frames while automatically removing overlapping columns
+#' from the second data frame (excluding those used for joining), to avoid `.x` / `.y` suffixes.
+#'
+#' @param df1 A data frame or tibble. The left-hand side of the join.
+#' @param df2 A data frame or tibble. The right-hand side of the join. Any columns that also
+#'   exist in \code{df1} (but are not part of the join keys) will be removed before the join.
+#' @param by A character vector specifying the column(s) to join by. Passed directly to \code{left_join()}.
+#' @param quiet Logical. If \code{FALSE} (default), prints informative messages about the join and dropped columns.
+#'
+#' @return A tibble resulting from the join, without conflicting column names.
+#' @importFrom dplyr left_join select all_of
+#' @importFrom rlang inform
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' df1 <- tibble(id = 1:3, value = c("A", "B", "C"))
+#' df2 <- tibble(id = 2:4, value = c("X", "Y", "Z"), extra = c(10, 20, 30))
+#'
+#' left_join_unique(df1, df2, by = "id")
+#' }
+left_join_unique <- function(df1, df2, by, quiet = FALSE) {
+  cols_to_remove <- setdiff(intersect(names(df1), names(df2)), by)
+
+  if (!quiet && length(cols_to_remove) > 0) {
+    inform(paste0("Removing overlapping columns from df2: ", toString(cols_to_remove)))
+  }
+
+  df2_trimmed <- df2 %>% select(-all_of(cols_to_remove))
+
+  if (!quiet) {
+    inform(paste0("Joining with `by = ", toString(by), "`"))
+  }
+
+  left_join(df1, df2_trimmed, by = by)
+}
