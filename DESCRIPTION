@@ -18,6 +18,7 @@ Imports:
     janitor,
     listful,
     magrittr,
+    officer,
     purrr,
     readr,
     rlang,
