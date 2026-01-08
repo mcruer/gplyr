@@ -1,0 +1,27 @@
+Package: filtertools
+Type: Package
+Title: Simple and Intuitive Data Filtering Tools
+Version: 0.1.0
+Authors@R: person("Geordie", "McRuer",
+                  email = "geordie.mcruer@ontario.ca",
+                  role = c("aut", "cre"))
+Description: Provides intuitive wrapper functions around dplyr filtering operations
+    for common data filtering tasks. Includes functions for string pattern matching
+    (filter_in, filter_out), NA-based filtering (filter_in_na, filter_out_na),
+    and numeric value filtering. Designed to make interactive data exploration
+    faster and more readable.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports:
+    dplyr (>= 1.0.0),
+    stringr,
+    magrittr,
+    rlang,
+    purrr
+Suggests:
+    testthat (>= 3.0.0)
+URL: https://github.com/mcruer/filtertools
+BugReports: https://github.com/mcruer/filtertools/issues
