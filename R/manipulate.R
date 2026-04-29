@@ -22,7 +22,7 @@ quickm <- function (df, .cols, .f = ~.x ,  ...) {
   .f <- as_mapper(.f)
 
   df %>%
-    dplyr::mutate(dplyr::across({{.cols}}, .fns = .f, .args = ...))
+    dplyr::mutate(dplyr::across({{.cols}}, .fns = \(x) .f(x, ...)))
 }
 
 #' Convert specified columns to numeric type
