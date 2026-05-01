@@ -18,7 +18,7 @@ clip_it(df, col_names = TRUE, sep = "\\t", na = "", clipboard.size = 16)
 \item{clipboard.size}{The size of the clipboard in powers of 2. Defaults to 16.}
 }
 \value{
-None. The data is copied to the clipboard.
+Invisibly returns the input data frame or tibble, so it can be used at the end of a pipe.
 }
 \description{
 Copy data frame to clipboard
