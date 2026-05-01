@@ -6,7 +6,7 @@
 #' @param na The string to use for NA values. Defaults to an empty string.
 #' @param clipboard.size The size of the clipboard in powers of 2. Defaults to 16.
 #'
-#' @return None. The data is copied to the clipboard.
+#' @return Invisibly returns the input data frame or tibble, so it can be used at the end of a pipe.
 #' @export
 clip_it <- function(df, col_names = TRUE, sep = "\t", na = "", clipboard.size = 16) {
 
@@ -23,6 +23,8 @@ clip_it <- function(df, col_names = TRUE, sep = "\t", na = "", clipboard.size = 
   }, error = function(err) {
     stop("An error occurred: ", conditionMessage(err))
   })
+
+  invisible(df)
 }
 
 #' Read Data Frame from Clipboard
