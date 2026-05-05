@@ -92,15 +92,15 @@ filter_in_na <- function (.df, ..., if_any_or_all = "if_all") {
 #' @return A filtered data frame.
 #' @export
 filter_str <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, negate = FALSE, na.rm = FALSE) {
+  col_vec <- dplyr::pull(df, {{col}})
+  pattern <- stringr::regex(string, ignore_case = ignore_case)
+  keep <- stringr::str_detect(col_vec, pattern, negate = negate)
+  if (!na.rm) keep <- keep | is.na(col_vec)
 
-  if (na.rm) {
-    df <- df %>% dplyr::filter(stringr::str_detect({{col}}, stringr::regex(string, ignore_case = ignore_case), negate = negate))
-  } else {
-    df <- df %>% dplyr::filter(stringr::str_detect({{col}}, stringr::regex(string, ignore_case = ignore_case), negate = negate) | is.na({{col}}))
-  }
+  df <- dplyr::filter(df, keep)
 
   if (drop.col) {
-    return(df %>% dplyr::select(-{{col}}))
+    return(dplyr::select(df, -{{col}}))
   }
 
   return(df)
