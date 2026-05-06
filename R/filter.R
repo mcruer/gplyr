@@ -80,8 +80,6 @@ filter_in_na <- function (.df, ..., if_any_or_all = "if_all") {
   }
 }
 
-#' Filter rows in a data frame based on string matching in a column
-#'
 #' @param df A data frame or tibble.
 #' @param col The column to filter on.
 #' @param string The string to look for.
@@ -90,7 +88,7 @@ filter_in_na <- function (.df, ..., if_any_or_all = "if_all") {
 #' @param negate Whether to keep or remove rows that match the string (default is FALSE).
 #' @param na.rm Whether to remove NA values (default is FALSE).
 #' @return A filtered data frame.
-#' @export
+#' @noRd
 filter_str <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, negate = FALSE, na.rm = FALSE) {
   col_vec <- dplyr::pull(df, {{col}})
   pattern <- stringr::regex(string, ignore_case = ignore_case)
@@ -106,36 +104,54 @@ filter_str <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, ne
   return(df)
 }
 
-#' Filter rows containing a specific string in a given column
+#' Keep rows where a column contains a string
 #'
-#' This function filters rows where the specified column contains the given string.
-#'
-#' @inheritParams filter_str
+#' @param df A data frame or tibble.
+#' @param col The column to filter on.
+#' @param string The string to look for.
+#' @param ignore_case Whether to ignore case (default is TRUE).
+#' @param drop.col Whether to remove the column that was filtered on (default is FALSE).
+#' @param na.rm Whether to remove NA values (default is FALSE).
 #' @return A filtered data frame.
 #' @examples \dontrun{
-#' library(dplyr)
-#' tibble(x = c("apple", "banana", "cherry")) %>%
-#'   filter_in(col = x, string = "app")
+#' tibble(x = c("apple", "banana", "cherry")) |>
+#'   filter_str_in(x, "app")
 #' }
 #' @export
-filter_in <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
+filter_str_in <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
   filter_str(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, negate = FALSE, na.rm = na.rm)
 }
 
-#' Filter out rows containing a specific string in a given column
+#' Remove rows where a column contains a string
 #'
-#' This function filters out rows where the specified column contains the given string.
-#'
-#' @inheritParams filter_str
+#' @param df A data frame or tibble.
+#' @param col The column to filter on.
+#' @param string The string to look for.
+#' @param ignore_case Whether to ignore case (default is TRUE).
+#' @param drop.col Whether to remove the column that was filtered on (default is FALSE).
+#' @param na.rm Whether to remove NA values (default is FALSE).
 #' @return A filtered data frame.
 #' @examples \dontrun{
-#' library(dplyr)
-#' tibble(x = c("apple", "banana", "cherry")) %>%
-#'   filter_out(col = x, string = "app")
+#' tibble(x = c("apple", "banana", "cherry")) |>
+#'   filter_str_out(x, "app")
 #' }
 #' @export
-filter_out <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
+filter_str_out <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
   filter_str(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, negate = TRUE, na.rm = na.rm)
+}
+
+#' @rdname filter_str_in
+#' @export
+filter_in <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
+  lifecycle::deprecate_warn("0.0.0.9000", "filter_in()", "filter_str_in()")
+  filter_str_in(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, na.rm = na.rm)
+}
+
+#' @rdname filter_str_out
+#' @export
+filter_out <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
+  lifecycle::deprecate_warn("0.0.0.9000", "filter_out()", "filter_str_out()")
+  filter_str_out(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, na.rm = na.rm)
 }
 
 #' Filter Out Numeric Values from Selected Columns
