@@ -115,10 +115,10 @@ filter_str <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, ne
 #' @return A filtered data frame.
 #' @examples \dontrun{
 #' tibble(x = c("apple", "banana", "cherry")) |>
-#'   filter_str_in(x, "app")
+#'   filter_in_str(x, "app")
 #' }
 #' @export
-filter_str_in <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
+filter_in_str <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
   filter_str(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, negate = FALSE, na.rm = na.rm)
 }
 
@@ -133,25 +133,25 @@ filter_str_in <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE,
 #' @return A filtered data frame.
 #' @examples \dontrun{
 #' tibble(x = c("apple", "banana", "cherry")) |>
-#'   filter_str_out(x, "app")
+#'   filter_out_str(x, "app")
 #' }
 #' @export
-filter_str_out <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
+filter_out_str <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
   filter_str(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, negate = TRUE, na.rm = na.rm)
 }
 
-#' @rdname filter_str_in
+#' @rdname filter_in_str
 #' @export
 filter_in <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
-  lifecycle::deprecate_warn("0.0.0.9000", "filter_in()", "filter_str_in()")
-  filter_str_in(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, na.rm = na.rm)
+  lifecycle::deprecate_warn("0.0.0.9000", "filter_in()", "filter_in_str()")
+  filter_in_str(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, na.rm = na.rm)
 }
 
-#' @rdname filter_str_out
+#' @rdname filter_out_str
 #' @export
 filter_out <- function(df, col, string, ignore_case = TRUE, drop.col = FALSE, na.rm = FALSE) {
-  lifecycle::deprecate_warn("0.0.0.9000", "filter_out()", "filter_str_out()")
-  filter_str_out(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, na.rm = na.rm)
+  lifecycle::deprecate_warn("0.0.0.9000", "filter_out()", "filter_out_str()")
+  filter_out_str(df = df, col = {{col}}, string = string, ignore_case = ignore_case, drop.col = drop.col, na.rm = na.rm)
 }
 
 #' Filter Out Numeric Values from Selected Columns
