@@ -40,10 +40,12 @@ clip_it <- function(df, col_names = TRUE, sep = "\t", na = "", clipboard.size = 
 #' The \code{paste_it} function reads tab-separated values from the clipboard using \code{readr::read_tsv()} and returns a tibble. The function ensures that:
 #' \itemize{
 #'   \item Leading and trailing whitespace in data fields is preserved (\code{trim_ws = FALSE}).
-#'   \item No characters are treated as quoting characters (\code{quote = ""}), which prevents issues with quotes and apostrophes in the data.
+#'   \item Standard double-quote quoting is used (the \code{read_tsv} default). Spreadsheets wrap any cell containing a tab, newline, or double quote in double quotes (escaping internal quotes by doubling them), so this correctly reassembles multi-line cells. Apostrophes (common in French, e.g. \code{d'enfants}) are single quotes and are never treated as special.
 #'   \item Column names are not altered (\code{name_repair = "minimal"}), preserving spaces and special characters.
 #' }
 #' If \code{header} is \code{TRUE}, the first row of the clipboard data is used as column names. If \code{header_names} is provided, these names replace the existing column names.
+#'
+#' Parsing warnings from \code{read_tsv} are passed through unchanged; call \code{readr::problems()} on the result to inspect them.
 #'
 #' @examples
 #' \dontrun{
@@ -64,60 +66,35 @@ clip_it <- function(df, col_names = TRUE, sep = "\t", na = "", clipboard.size = 
 #' @importFrom purrr set_names
 #' @export
 paste_it <- function(header = TRUE, header_names = NULL) {
-  tryCatch({
-    # Ensure required packages are available
-    if (!requireNamespace("readr", quietly = TRUE)) {
-      stop("The 'readr' package is required but not installed. Please install it using install.packages('readr').")
-    }
-    if (!requireNamespace("clipr", quietly = TRUE)) {
-      stop("The 'clipr' package is required but not installed. Please install it using install.packages('clipr').")
-    }
-    if (!requireNamespace("tibble", quietly = TRUE)) {
-      stop("The 'tibble' package is required but not installed. Please install it using install.packages('tibble').")
-    }
-    if (!requireNamespace("purrr", quietly = TRUE)) {
-      stop("The 'purrr' package is required but not installed. Please install it using install.packages('purrr').")
-    }
+  # Clipboard arrives as one string per line; rejoin so embedded-newline
+  # cells (which read_clip splits) are reassembled before parsing.
+  clipboard_text <- paste(clipr::read_clip(), collapse = "\n")
 
-    # Read clipboard content
-    clipboard_content <- clipr::read_clip()
-    # Combine into a single string
-    clipboard_text <- paste(clipboard_content, collapse = "\n")
+  # Standard TSV parsing. Default quoting handles cells that spreadsheets
+  # wrap in double quotes (tabs, newlines, escaped quotes); apostrophes are
+  # left untouched. Warnings propagate so readr::problems() stays useful.
+  df <- readr::read_tsv(
+    I(clipboard_text),
+    col_names = header,
+    name_repair = "minimal",
+    trim_ws = FALSE,
+    skip_empty_rows = TRUE,
+    show_col_types = FALSE
+  )
 
-    # Read data with 'col_names' set according to 'header' argument.
-    # withCallingHandlers (not tryCatch) for warnings so execution continues
-    # after readr signals a parsing warning rather than returning NULL.
-    df <- withCallingHandlers(
-      readr::read_tsv(
-        I(clipboard_text),
-        col_names = header,
-        quote = "",
-        name_repair = "minimal",
-        trim_ws = FALSE,
-        skip_empty_rows = TRUE,
-        show_col_types = FALSE
-      ),
-      warning = function(war) {
-        warning("There was a warning: ", conditionMessage(war))
-        invokeRestart("muffleWarning")
-      }
-    )
+  df <- tibble::as_tibble(df)
 
-    # Convert to tibble
-    df <- tibble::as_tibble(df)
-
-    # If 'header_names' is provided, assign names to columns
-    if (!is.null(header_names)) {
-      if (length(header_names) != ncol(df)) {
-        stop("Length of 'header_names' does not match the number of columns in the data.")
-      }
-      df <- purrr::set_names(df, header_names)
+  if (!is.null(header_names)) {
+    if (length(header_names) != ncol(df)) {
+      stop(
+        "Length of 'header_names' (", length(header_names),
+        ") does not match the number of columns in the data (", ncol(df), ")."
+      )
     }
+    df <- purrr::set_names(df, header_names)
+  }
 
-    return(df)
-  }, error = function(err) {
-    stop("An error occurred: ", conditionMessage(err))
-  })
+  df
 }
 
 
