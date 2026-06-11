@@ -84,15 +84,23 @@ paste_it <- function(header = TRUE, header_names = NULL) {
     # Combine into a single string
     clipboard_text <- paste(clipboard_content, collapse = "\n")
 
-    # Read data with 'col_names' set according to 'header' argument
-    df <- readr::read_tsv(
-      I(clipboard_text),
-      col_names = header,
-      quote = "",
-      name_repair = "minimal",
-      trim_ws = FALSE,
-      skip_empty_rows = TRUE,
-      show_col_types = FALSE
+    # Read data with 'col_names' set according to 'header' argument.
+    # withCallingHandlers (not tryCatch) for warnings so execution continues
+    # after readr signals a parsing warning rather than returning NULL.
+    df <- withCallingHandlers(
+      readr::read_tsv(
+        I(clipboard_text),
+        col_names = header,
+        quote = "",
+        name_repair = "minimal",
+        trim_ws = FALSE,
+        skip_empty_rows = TRUE,
+        show_col_types = FALSE
+      ),
+      warning = function(war) {
+        warning("There was a warning: ", conditionMessage(war))
+        invokeRestart("muffleWarning")
+      }
     )
 
     # Convert to tibble
@@ -107,9 +115,6 @@ paste_it <- function(header = TRUE, header_names = NULL) {
     }
 
     return(df)
-  }, warning = function(war) {
-    warning("There was a warning: ", conditionMessage(war))
-    return(NULL)
   }, error = function(err) {
     stop("An error occurred: ", conditionMessage(err))
   })
