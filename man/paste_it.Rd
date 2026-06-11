@@ -21,7 +21,7 @@ This function reads data from the clipboard and returns a tibble. It can handle 
 The \code{paste_it} function reads tab-separated values from the clipboard using \code{readr::read_tsv()} and returns a tibble. The function ensures that:
 \itemize{
 \item Leading and trailing whitespace in data fields is preserved (\code{trim_ws = FALSE}).
-\item Standard double-quote quoting is used (the \code{read_tsv} default). Spreadsheets wrap any cell containing a tab, newline, or double quote in double quotes (escaping internal quotes by doubling them), so this correctly reassembles multi-line cells. Apostrophes (common in French, e.g. \code{d'enfants}) are single quotes and are never treated as special.
+\item Standard double-quote quoting is used (the \code{read_tsv} default). Spreadsheets wrap any cell containing a tab, newline, or double quote in double quotes (escaping internal quotes by doubling them), so this correctly reassembles multi-line cells. Apostrophes in French words (e.g., d'enfants) are single-quote characters and are never treated as special.
 \item Column names are not altered (\code{name_repair = "minimal"}), preserving spaces and special characters.
 }
 If \code{header} is \code{TRUE}, the first row of the clipboard data is used as column names. If \code{header_names} is provided, these names replace the existing column names.
