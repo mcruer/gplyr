@@ -14,6 +14,9 @@ This function reads a string from the clipboard, replaces all backslashes (\\)
 with forward slashes (/), wraps the modified string in double quotes, and
 then writes it back to the clipboard. It's intended to convert file paths
 copied from the file system in Windows to a format suitable for use in R.
+If the clipboard content is already wrapped in double quotes (e.g. paths
+copied via "Copy as path" in Windows Explorer), the existing quotes are
+reused instead of being doubled up.
 The function throws an error if the clipboard content is not a single string.
 }
 \examples{

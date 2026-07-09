@@ -132,6 +132,9 @@ clipped_vec <- function(header = FALSE) {
 #' with forward slashes (/), wraps the modified string in double quotes, and
 #' then writes it back to the clipboard. It's intended to convert file paths
 #' copied from the file system in Windows to a format suitable for use in R.
+#' If the clipboard content is already wrapped in double quotes (e.g. paths
+#' copied via "Copy as path" in Windows Explorer), the existing quotes are
+#' reused instead of being doubled up.
 #' The function throws an error if the clipboard content is not a single string.
 #'
 #' @return Invisible NULL. The function's primary effect is to alter the clipboard content.
@@ -142,7 +145,7 @@ clipped_vec <- function(header = FALSE) {
 #' }
 #' @export
 #' @importFrom clipr read_clip write_clip
-#' @importFrom stringr str_replace_all
+#' @importFrom stringr str_replace_all str_detect str_sub
 fix_path <- function() {
   # Read the current clipboard content
   clipboard_content <- clipr::read_clip()
@@ -152,8 +155,17 @@ fix_path <- function() {
     stop("Clipboard content is not a single string.")
   }
 
+  # If the content is already wrapped in double quotes, strip them so we
+  # don't end up double-quoting it
+  already_quoted <- stringr::str_detect(clipboard_content, '^".*"$')
+  unquoted_content <- if (already_quoted) {
+    stringr::str_sub(clipboard_content, 2, -2)
+  } else {
+    clipboard_content
+  }
+
   # Replace all backslashes with forward slashes
-  modified_content <- stringr::str_replace_all(clipboard_content, "\\\\", "/")
+  modified_content <- stringr::str_replace_all(unquoted_content, "\\\\", "/")
 
   # Wrap the modified content in quotation marks
   quoted_content <- paste0('"', modified_content, '"')
